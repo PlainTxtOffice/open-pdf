@@ -59,7 +59,7 @@ distributable shapes:
 ./dev-docs/packaging/nuitka/standalone.ps1  # to feed an installer
 ```
 
-`onefile.ps1` writes `build/onefile/Open PDF.exe`, a single portable
+`onefile.ps1` writes `build/onefile/open-pdf.exe`, a single portable
 executable that keeps its settings, logs, and caches in an `Open PDF Data`
 folder beside itself. Run it from a USB stick and it leaves nothing behind on
 the host machine.

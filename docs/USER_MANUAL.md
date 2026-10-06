@@ -39,7 +39,7 @@ its settings, logs, and caches.
 
 | Script | Output | Storage location |
 | --- | --- | --- |
-| `onefile.ps1` | `build/onefile/Open PDF.exe`, one self-contained file | Portable: an `Open PDF Data` folder beside the executable |
+| `onefile.ps1` | `build/onefile/open-pdf.exe`, one self-contained file | Portable: an `Open PDF Data` folder beside the executable |
 | `standalone.ps1` | `build/standalone/`, an unpacked directory to feed an installer | Per-user: `%LOCALAPPDATA%\Open PDF` |
 
 1. Run `./dev-docs/packaging/nuitka/onefile.ps1` for the portable build, or
