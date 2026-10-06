@@ -1,0 +1,79 @@
+#:schema https://json.schemastore.org/pyproject.json
+
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "open-pdf"
+version = "1.0.0"
+description = "Lightweight desktop PDF viewer built with PySide6 and PyMuPDF"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "AGPL-3.0-or-later"
+authors = [{ name = "Tripp", email = "tripp@trippemail.com" }]
+license-files = ["LICENSE"]
+dependencies = ["PySide6>=6.7", "PyMuPDF>=1.24"]
+
+
+[project.scripts]
+open-pdf = "src.main:main"
+
+[dependency-groups]
+dev = ["mypy>=1.11", "pytest>=8.0"]
+
+[tool.setuptools]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+addopts = "-s"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 80
+# Single source of truth for both the CLI and the editor; the Ruff
+# extension's overrides were removed from .vscode/settings.json.
+exclude = ["tests", ".venv"]
+
+[tool.ruff.lint]
+# The editor already linted with ALL via its own settings while the CLI
+# ran a much narrower default set, which made every editor-driven `noqa`
+# look unused to `ruff check .`.
+select = ["ALL"]
+# D203/D213 are the halves of two mutually exclusive pairs that "ALL" pulls
+# in together; naming them here picks the side this codebase already uses and
+# silences Ruff's incompatibility warning.
+# COM812 fights the Ruff formatter (which manages trailing commas
+# itself); enabling both makes `check --fix` and `format` undo each
+# other's work.
+ignore = ["COM812", "CPY001", "D203", "D213", "DOC201", "DOC501"]
+
+[tool.ruff.lint.flake8-import-conventions.extend-aliases]
+"decimal.Decimal" = "D"
+
+[tool.mypy]
+exclude = ['(^|[\\/])tests([\\/]|$)']
+ignore_missing_imports = true
+
+[tool.pymarkdown]
+extensions.front-matter.enabled = true
+
+[tool.rumdl]
+# Match the 80-column wrap used by ruff and the editor.
+line-length = 80
+exclude = [".venv", "build", "dist"]
+# Also covers the ignored paths not listed above, such as .pytest_cache/ and
+# logs/, and keeps covering whatever .gitignore gains later.
+respect-gitignore = true
+[tool.rumdl.MD010]
+# Expand tabs to 2 spaces, not the default 4.
+spaces-per-tab = 2
+
+[tool.rumdl.MD013]
+# Commands and paths inside fenced blocks cannot be wrapped to 80.
+code-blocks = false
+# Markdown table rows cannot be wrapped without breaking their structure.
+tables = false

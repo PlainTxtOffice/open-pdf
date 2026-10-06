@@ -1,0 +1,34 @@
+# Build outputs and packaging metadata
+build/
+*.egg-info/
+nuitka-crash-report.xml
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest_tmp_run/
+.pytest_tmp_review/
+.mypy_cache/
+.ruff_cache/
+.venv/
+
+# Runtime state and local profiling
+data/
+logs/
+*.prof
+
+# Local reference and packaged-only assets
+
+
+
+# File Extensions
+*.pdf
+*.png
+!assets/open-pdf-main-window.png
+*.zip
+dev-docs/packaging/nuitka/installing_nuitka.md
+# OS-specific files
+.DS_Store
+assets/fonts/*.ttf
+
