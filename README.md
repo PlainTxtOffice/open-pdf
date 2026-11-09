@@ -1,151 +1,73 @@
 ---
-last_updated: 2026-09-15
+last_updated: 2026-11-09
 ---
 
-# Open PDF
+<!-- Authoring guidance: dev-docs/specs/README_SPEC.instructions.md -->
+<!-- rumdl-disable MD033 MD041 -->
+<p align="center">
+  <img src="assets/icons/open_pdf.svg" alt="Open PDF logo: a white document with a red PDF badge and a blue arrow" width="200">
+</p>
 
-Lightweight desktop PDF viewer with room for basic editing features, built
-with [PySide6](https://wiki.qt.io/Qt_for_Python) and
-[PyMuPDF](https://pymupdf.readthedocs.io/).
+<h1 align="center">Open PDF</h1>
 
-![Open PDF main window](assets/open-pdf-main-window.png)
+<p align="center">
+  A lightweight desktop PDF viewer with light editing, for people who want to
+  read, search, and touch up PDFs without a heavyweight suite.
+</p>
+<!-- rumdl-enable MD033 MD041 -->
 
-Open PDF is a no-frills desktop reader for PDF files. Open a document from
-your file manager or the command line, scroll the whole file continuously,
-switch to a one-page-at-a-time view, search across the document, follow
-built-in bookmarks, and copy selectable text — without waiting for the entire
-PDF to rasterize up front. Light editing is there when you need it: redact a
-region, replace a line of text, reorder or insert pages, and save the result
-back over the original.
+---
 
-For a step-by-step walkthrough and full feature reference, see the
-[User Manual](docs/USER_MANUAL.md).
+## About
 
-## Getting started
+Open PDF is a no-frills desktop reader for PDF files on Windows and Linux. Open
+a document from your file manager or the command line and start reading right
+away: pages render as you reach them instead of waiting for the whole file.
+Light editing is there when you need it, such as redacting a region, replacing a
+line of text, reordering pages, and saving the result back over the original.
+The Windows portable build runs from a USB stick and keeps its settings beside
+itself.
 
-Requires Python 3.12 or newer.
+The [Linux implementation](platform/linux/README.md) uses Qt desktop controls,
+XDG storage, and the desktop keyring. Its GitHub Actions build targets Ubuntu
+24.04 x86-64; the first hosted build and Linux runtime verification are pending.
 
-1. Clone the repository and create a virtual environment.
-1. Install the project in editable mode:
-
-   ```powershell
-   pip install -e .
-   ```
-
-1. Launch the app:
-
-   ```powershell
-   open-pdf
-   ```
-
-1. Or open a PDF directly at launch:
-
-   ```powershell
-   open-pdf path/to/file.pdf
-   ```
-
-Launching a second time while the app is already running activates the
-existing window and forwards the requested PDF to it, rather than starting a
-new process.
-
-## Building a Windows executable
-
-Nuitka build scripts live in `dev-docs/packaging/nuitka/` and use the
-repository's `.venv` as the build interpreter. The two scripts produce the two
-distributable shapes:
-
-```powershell
-./dev-docs/packaging/nuitka/onefile.ps1     # portable
-./dev-docs/packaging/nuitka/standalone.ps1  # to feed an installer
-```
-
-`onefile.ps1` writes `build/onefile/open-pdf.exe`, a single portable
-executable that keeps its settings, logs, and caches in an `Open PDF Data`
-folder beside itself. Run it from a USB stick and it leaves nothing behind on
-the host machine.
-
-`standalone.ps1` writes an unpacked `build/standalone/` directory to hand to
-an installer. That build keeps per-user state in `%LOCALAPPDATA%\Open PDF`, so
-it does not need a writable installation directory.
-
-The difference is a `portable.marker` file that `onefile.ps1` bundles into the
-build and `standalone.ps1` leaves out — nothing at runtime switches modes, so
-an installed copy cannot become portable by accident.
+The initial [macOS implementation](platform/mac_os/README.md) adds Finder file
+opening, native menus, Keychain storage, and app-bundle tooling. Its Python
+tests pass on Windows; the first native Mac build and runtime checks are
+pending.
 
 ## Features
 
-### Reading
+- Open several PDFs at once in tabs you can drag to reorder; launching again
+  forwards the file to the running window
+- Read in continuous scrolling or single-page view, and navigate with page
+  jumps, thumbnails, bookmarks, and links inside the PDF
+- Zoom to actual size, fit width, fit page, or with `Ctrl` + mouse wheel
+- Search the whole document as you type and copy selectable text
+- Redact a page region or replace the text it covers
+- Insert blank pages, reorder, rotate, or delete pages, and edit bookmarks
+- Edit document metadata and keep plain-text notes stored inside the PDF
+- Run optional Tesseract OCR on one page or the whole document
+- Save in place, save a copy, rename the file, or print all or part of it
+- Remember passwords for encrypted PDFs using Windows protection or Linux's
+  Secret Service desktop keyring
 
-- Open a PDF from disk or via the command line
-- Several documents open at once in tabs you can drag to reorder
-- Continuous scrolling view of the full document
-- Single-page view for one-page-at-a-time reading with `Up` / `Down` page
-  steps
-- Navigate with the page-number jump, the thumbnails pane, the bookmarks
-  pane, or by clicking links inside the PDF
-- Zoom with `Actual Size`, `Fit Width`, `Fit Page`, or `Ctrl + mouse wheel`
-  centered on the pointer
-- Full-document text search that updates as you type, with jump-between-matches
-- Copy selectable text from the extracted text pane or the page overlay
-- Remembers passwords for encrypted PDFs, stored protected on Windows
+## App Screenshot
 
-### Editing
+![Open PDF main window on Windows, with page thumbnails on the left, the continuous document view in the center, and bookmarks on the right](platform/windows/assets/screenshots/open-pdf-main-window.png)
 
-- Edit PDF mode: drag out a page region, then `Remove Content` to redact it
-  or `Replace Text...` to rewrite the text it covers
-- Insert a blank page before or after the current page, sized to match its
-  neighbour
-- Reorder pages with the arrow buttons above the thumbnails pane
-- Rotate or delete a page from the thumbnail context menu
-- Add bookmarks from selected text, then rename or delete them
-- Edit PDF Info Dictionary fields and raw XMP metadata
-- Write plain-text notes that are stored as `notes.txt` inside the PDF
-- Optional Tesseract OCR for one page or the whole document, cached per
-  source file so results survive reopening
+## User Manual
 
-### Files
-
-- Save in place, `Save As` a copy, or `Rename File` to move the document to a
-  new name
-- Print all pages, the current page, or a page range
-
-### Under the hood
-
-- Lazy rendering: only visible pages are rasterized, and far-off page images
-  are evicted from memory automatically
-- Unhandled errors are routed to a crash dialog that names the log file
-
-## Glossary
-
-Terminology used throughout the app and its documentation:
-
-- **menu bar**: the top application menu strip
-- **tool bar**: the strip below the menu bar with page, zoom, and search
-  controls
-- **page thumbnails**: the pane that lists page previews for direct
-  navigation
-- **document view**: the central scrolling PDF surface
-- **bookmarks**: the pane that shows the PDF outline/tree
-- **notes**: the editable plain-text pane stored inside the active PDF
-- **status bar**: the strip along the bottom of the main window
-- **Read Mode**: the normal interaction mode, where dragging selects text
-- **Edit PDF mode**: the interaction mode where dragging selects a page
-  region to redact or replace
-
-## Roadmap
-
-Planned next steps:
-
-- Annotation tools
-- Better on-page text selection and annotation handles
-- Keyboard shortcuts for page stepping, zoom, and back/forward history, which
-  currently exist as actions with no binding
+See the [User Manual](docs/USER_MANUAL.md) for installation, setup, usage, and
+troubleshooting.
 
 ## License
 
-This project is licensed under the
-[GNU Affero General Public License v3.0 or later](LICENSE).
+Open PDF's original code is licensed under the [MIT License](LICENSE).
 
-That choice is intentional: Open PDF depends on PyMuPDF, which is offered
-under AGPL or a commercial license. Using AGPL for this repository keeps the
-source distribution aligned with the open-source PyMuPDF licensing model.
+Third-party dependencies retain their own licenses. In particular,
+[PyMuPDF and MuPDF](https://pymupdf.readthedocs.io/en/latest/about.html#license-and-copyright)
+are offered under AGPL or a commercial license. This repository's MIT license
+does not replace those terms; distributing Open PDF with these dependencies
+requires compliance with their applicable licenses.

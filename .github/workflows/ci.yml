@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Windows / Python ${{ matrix.python-version }}
+    runs-on: windows-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: platform/windows
+    env:
+      PYTHONUTF8: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Create virtual environment
+        run: python -m venv .venv
+
+      - name: Install project and developer dependencies
+        run: .venv/Scripts/python.exe -m pip install ".[dev]"
+
+      - name: Lint Python
+        run: .venv/Scripts/python.exe -m ruff check .
+
+      - name: Check types
+        run: .venv/Scripts/python.exe -m mypy open_pdf
+
+      - name: Run tests
+        run: .venv/Scripts/python.exe -m pytest
+
+      - name: Check Markdown
+        working-directory: .
+        run: platform/windows/.venv/Scripts/rumdl.exe check

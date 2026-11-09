@@ -1,0 +1,92 @@
+# Build the Windows release executables with the project's Nuitka scripts after
+# CI passes, and keep them as workflow artifacts. Run it from the Actions tab or
+# push a tag such as v1.0.0.
+#
+# The runner has free Nuitka from PyPI, so the scripts build without Nuitka
+# Commercial and warn that constants are not encrypted and that the executable
+# is unsigned. Use these artifacts to check that the release builds work;
+# distribute the Commercial builds made locally. The installer needs a licensed
+# Advanced Installer and is still built locally.
+name: Windows build
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: Nuitka / ${{ matrix.variant }}
+    needs: ci
+    runs-on: windows-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ship the complete .dist folder; it is the Advanced Installer payload.
+          - variant: standalone
+            output: build/standalone/*.dist
+          # Ship the executable alone, without its staging folders.
+          - variant: onefile
+            output: build/onefile/*.exe
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: platform/windows
+    env:
+      PYTHONUTF8: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # A project that has not created its build scripts yet skips the build
+      # with a notice instead of failing.
+      - name: Check for the build script
+        id: script
+        run: |
+          $exists = Test-Path -LiteralPath scripts/nuitka/${{ matrix.variant }}.ps1
+          "exists=$($exists.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          if (-not $exists) {
+              Write-Output "::notice::No scripts/nuitka/${{ matrix.variant }}.ps1 yet; skipping the ${{ matrix.variant }} build."
+          }
+
+      - name: Set up Python
+        if: steps.script.outputs.exists == 'true'
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.14"
+
+      - name: Create virtual environment
+        if: steps.script.outputs.exists == 'true'
+        run: python -m venv .venv
+
+      - name: Install project and Nuitka
+        if: steps.script.outputs.exists == 'true'
+        # Keep the Nuitka version in step with the one used for local builds.
+        # zstandard covers onefile scripts written before the guide accepted
+        # Python 3.14's built-in compression.zstd.
+        run: .venv/Scripts/python.exe -m pip install -e . "nuitka==4.2.2" zstandard
+
+      - name: Build with Nuitka
+        if: steps.script.outputs.exists == 'true'
+        # standalone.ps1 also runs the privacy scan and validate_release.ps1.
+        run: ./scripts/nuitka/${{ matrix.variant }}.ps1 -Compiler msvc
+
+      - name: Upload build
+        if: steps.script.outputs.exists == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ${{ github.event.repository.name }}-${{ matrix.variant }}-windows-x64
+          path: platform/windows/${{ matrix.output }}
+          if-no-files-found: error
+          retention-days: 30

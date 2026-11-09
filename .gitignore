@@ -1,34 +1,61 @@
-# Build outputs and packaging metadata
+# last updated 2026-10-28
+# Python-generated files
+*.py[oc]
 build/
-*.egg-info/
+dist/
+wheels/
+*.egg-info
+__pycache__/
+
+# Nuitka build artifacts
+*.build/
+*.dist/
+*.onefile-build/
 nuitka-crash-report.xml
 
-# Python caches and virtual environments
-__pycache__/
-*.py[cod]
+# virtual environments
+.venv**
+
+# caches
 .pytest_cache/
 .pytest_tmp_run/
 .pytest_tmp_review/
 .mypy_cache/
 .ruff_cache/
-.venv/
 
-# Runtime state and local profiling
-data/
+# directories
 logs/
-*.prof
+data/
+exports/
+.pytest-temp/
+main.build/
+main.dist/
+main.onefile-build/
 
-# Local reference and packaged-only assets
-
-
-
-# File Extensions
+# files
 *.pdf
-*.png
-!assets/open-pdf-main-window.png
+*.db
+*.prof
 *.zip
-dev-docs/packaging/nuitka/installing_nuitka.md
-# OS-specific files
+*.png
+!platform/windows/assets/screenshots/*.png
+!platform/linux/open_pdf/assets/open_pdf.png
+.env
 .DS_Store
-assets/fonts/*.ttf
+platform/windows/assets/fonts/*.ttf
+dev-docs/prompt_template.md
+# Private Nuitka setup notes; never distribute.
+installing_nuitka.md
+# Nuitka traceback-encryption keys decrypt crash output; never commit them.
+*.key
+platform/windows/tests/.pytest-consolidate-suite/
+.agents/ptm/
 
+# Local skill reports; only their usage guide is tracked.
+.agents/skills_export/*
+!.agents/skills_export/README.md
+# Persistent installer projects, without their backups and build caches.
+platform/windows/dev-docs/packaging/advanced_installer/*
+!platform/windows/dev-docs/packaging/advanced_installer/*.aip
+!platform/windows/dev-docs/packaging/advanced_installer/*.md
+platform/windows/dev-docs/packaging/advanced_installer/*.back(*).aip

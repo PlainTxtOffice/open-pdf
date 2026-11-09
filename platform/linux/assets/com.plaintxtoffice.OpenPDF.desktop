@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Open PDF
+Comment=Read and lightly edit PDF documents
+Exec=open-pdf %f
+Icon=com.plaintxtoffice.OpenPDF
+Terminal=false
+Categories=Office;Viewer;
+MimeType=application/pdf;
+StartupNotify=true

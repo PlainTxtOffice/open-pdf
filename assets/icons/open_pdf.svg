@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  <title>Open PDF</title>
+  <desc>A folded white document with a red PDF badge and a blue arrow pointing up and right.</desc>
+  <defs>
+    <linearGradient id="paper" x1="72" y1="20" x2="192" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EDF2F7"/>
+    </linearGradient>
+    <linearGradient id="badge" x1="28" y1="144" x2="172" y2="204" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E02E42"/>
+      <stop offset="1" stop-color="#B91630"/>
+    </linearGradient>
+    <linearGradient id="arrow" x1="138" y1="118" x2="226" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2256B0"/>
+      <stop offset="1" stop-color="#3987E7"/>
+    </linearGradient>
+  </defs>
+  <!-- Document and folded corner. -->
+  <path d="M70 24H150L202 76V220C202 232 194 240 182 240H70C58 240 50 232 50 220V44C50 32 58 24 70 24Z" fill="#172B46" opacity=".12"/>
+  <path d="M70 18H150L200 68V216C200 228 192 236 180 236H70C58 236 50 228 50 216V38C50 26 58 18 70 18Z" fill="url(#paper)" stroke="#BBC7D5" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M150 19V56C150 64 154 68 162 68H199" fill="#DDE6F0"/>
+  <path d="M150 20V56C150 64 154 68 162 68H198" stroke="#BBC7D5" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Quiet text lines leave room for the opening arrow. -->
+  <path d="M76 88H128M76 106H112M76 124H102M80 218H152" stroke="#BCC8D7" stroke-width="6" stroke-linecap="round"/>
+  <!-- A single, strong arrow silhouette remains readable at small sizes. -->
+  <path d="M132 112L190 54L178 42L232 26L216 80L204 68L146 126Z" fill="#173D7A" opacity=".12" transform="translate(0 3)"/>
+  <path d="M132 112L190 54L178 42L232 26L216 80L204 68L146 126Z" fill="url(#arrow)" stroke="#1E55A4" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- PDF lettering is outlined, so no installed fonts are required. -->
+  <rect x="24" y="147" width="152" height="62" rx="14" fill="#701026" opacity=".14"/>
+  <rect x="24" y="142" width="152" height="62" rx="14" fill="url(#badge)"/>
+  <path d="M39 144H161C168 144 174 150 174 157" stroke="#FFFFFF" stroke-opacity=".22" stroke-width="2" stroke-linecap="round"/>
+  <g fill="#FFFFFF" fill-rule="evenodd">
+    <path d="M49 190V156H64C73 156 78 161 78 168C78 176 73 180 64 180H57V190ZM57 163V173H63C68 173 70 171 70 168C70 165 68 163 63 163Z"/>
+    <path d="M85 190V156H98C110 156 117 162 117 173C117 184 110 190 98 190ZM93 163V183H98C105 183 109 180 109 173C109 166 105 163 98 163Z"/>
+    <path d="M124 190V156H151V163H132V171H148V178H132V190Z"/>
+  </g>
+</svg>

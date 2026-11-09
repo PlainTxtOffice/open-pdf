@@ -1,0 +1,1 @@
+"""Page-scoped document operations."""

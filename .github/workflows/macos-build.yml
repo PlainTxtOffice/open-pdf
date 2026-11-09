@@ -1,0 +1,63 @@
+name: macOS build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths: ["platform/mac_os/**", ".github/workflows/macos-build.yml"]
+  pull_request:
+    paths: ["platform/mac_os/**", ".github/workflows/macos-build.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check for platform automation
+        id: project
+        run: |
+          if [[ -f platform/mac_os/scripts/ci.sh ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No platform/mac_os/scripts/ci.sh yet; macOS build skipped."
+            echo "macOS build skipped: add platform/mac_os/scripts/ci.sh." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # The platform owns toolchain setup, checks, tests, and packaging.
+      # The same command runs locally on macOS. See workflows/README.md.
+      - name: Check and build macOS application
+        if: steps.project.outputs.ready == 'true'
+        working-directory: platform/mac_os
+        run: bash -euo pipefail scripts/ci.sh
+
+      - name: Package workflow artifacts
+        if: steps.project.outputs.ready == 'true'
+        working-directory: platform/mac_os
+        run: |
+          test -n "$(find build/ci-artifacts -type f -print -quit)"
+          tar -czf build/macos-build.tar.gz -C build/ci-artifacts .
+
+      - name: Upload build
+        if: steps.project.outputs.ready == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ${{ github.event.repository.name }}-macos-${{ runner.arch }}
+          path: platform/mac_os/build/macos-build.tar.gz
+          if-no-files-found: error
+          retention-days: 30

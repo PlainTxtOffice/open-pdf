@@ -1,0 +1,99 @@
+name: Linux build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "platform/linux/**"
+      - ".github/workflows/linux-build.yml"
+      - "assets/icons/open_pdf.svg"
+      - "LICENSE"
+  pull_request:
+    paths:
+      - "platform/linux/**"
+      - ".github/workflows/linux-build.yml"
+      - "assets/icons/open_pdf.svg"
+      - "LICENSE"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Ubuntu 24.04 / Python 3.14
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+        working-directory: platform/linux
+    env:
+      PYTHONUTF8: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.14"
+
+      - name: Install compiler and desktop libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential patchelf xvfb xauth desktop-file-utils \
+            libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
+            libxcb-xinerama0 libxcb-xkb1 libx11-xcb1 libdbus-1-3 \
+            libfontconfig1 libfreetype6 fonts-dejavu-core \
+            tesseract-ocr tesseract-ocr-eng dbus-x11 gnome-keyring
+
+      - name: Install project and tools
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install '.[dev,build,ocr]'
+
+      - name: Lint and check types
+        run: |
+          .venv/bin/python -m ruff check .
+          .venv/bin/python -m mypy open_pdf
+          desktop-file-validate assets/com.plaintxtoffice.OpenPDF.desktop
+          .venv/bin/rumdl check README.md THIRD_PARTY.md
+
+      - name: Run regression tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: .venv/bin/python -m pytest
+
+      - name: Test desktop keyring integration
+        run: |
+          dbus-run-session -- bash -e -c '
+            printf "\n" | gnome-keyring-daemon --unlock --components=secrets
+            OPEN_PDF_TEST_KEYRING=1 .venv/bin/python -m pytest tests/test_secret_service.py
+          '
+
+      - name: Test source GUI under X11
+        run: xvfb-run -a .venv/bin/python scripts/smoke_test.py
+
+      - name: Compile, test, and archive
+        run: xvfb-run -a .venv/bin/python scripts/build.py
+
+      - name: Test extracted deliverable
+        run: xvfb-run -a .venv/bin/python scripts/smoke_test.py --archive build/open-pdf-*-linux-x86_64.tar.gz
+
+      - name: Upload Linux archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: open-pdf-linux-x86_64
+          path: platform/linux/build/open-pdf-*-linux-x86_64.tar.gz
+          if-no-files-found: error
+          retention-days: 30
