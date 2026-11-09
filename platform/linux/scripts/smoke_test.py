@@ -28,13 +28,21 @@ def smoke_test(command: list[str]) -> None:
                 "XDG_RUNTIME_DIR"] = str(location)
         env["HOME"] = str(root)
         env.setdefault("QT_QPA_PLATFORM", "xcb")
-        result = subprocess.run(
-            [*command, "--smoke-test", str(pdf)], env=env,
-            cwd=root, capture_output=True, text=True, timeout=60, check=True,
-        )
+        env["PYTHONFAULTHANDLER"] = "1"
+        try:
+            result = subprocess.run(
+                [*command, "--smoke-test", str(pdf)], env=env, cwd=root,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                encoding="utf-8", errors="replace", timeout=60, check=False,
+            )
+        except subprocess.TimeoutExpired as error:
+            output = error.stdout or b""
+            print(output.decode("utf-8", errors="replace"), flush=True)
+            raise
+        print(result.stdout.strip(), flush=True)
+        result.check_returncode()
         if "OPEN_PDF_SMOKE_OK" not in result.stdout:
-            raise RuntimeError(f"GUI did not confirm rendering: {result.stderr}")
-        print(result.stdout.strip())
+            raise RuntimeError("GUI did not confirm rendering")
 
 
 def test_archive(path: Path) -> None:
