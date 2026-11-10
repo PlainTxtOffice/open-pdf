@@ -75,12 +75,14 @@ jobs:
         # Keep the Nuitka version in step with the one used for local builds.
         # zstandard covers onefile scripts written before the guide accepted
         # Python 3.14's built-in compression.zstd.
-        run: .venv/Scripts/python.exe -m pip install -e . "nuitka==4.2.2" zstandard
+        run: .venv/Scripts/python.exe -m pip install -e . "nuitka==4.3.4" zstandard
 
       - name: Build with Nuitka
         if: steps.script.outputs.exists == 'true'
         # standalone.ps1 also runs the privacy scan and validate_release.ps1.
-        run: ./scripts/nuitka/${{ matrix.variant }}.ps1 -Compiler msvc
+        # Match local clang-cl builds: MSVC runs out of compiler heap (C1002)
+        # on the generated pymupdf.mupdf module, even with LTO disabled.
+        run: ./scripts/nuitka/${{ matrix.variant }}.ps1 -Compiler clang
 
       - name: Upload build
         if: steps.script.outputs.exists == 'true'

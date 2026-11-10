@@ -37,8 +37,9 @@ in its selected output directory, including both stdout and stderr.
 - `-OutputDirectory` and `-OutputFilename` override the output location and
   executable name. Relative paths resolve from the Windows project root.
 - `-Compiler msvc|clang|mingw64` selects the compiler; local builds retain the
-  established Visual Studio clang default. `-MsvcVersion` applies to MSVC.
-  Hosted builds explicitly select MSVC. MinGW64 is rejected on Python 3.13+.
+  established Visual Studio clang default. Hosted builds also select Visual
+  Studio clang to avoid MSVC's compiler heap limit on the generated PyMuPDF
+  wrapper. `-MsvcVersion` applies to MSVC. MinGW64 is rejected on Python 3.13+.
 - `-Jobs`, `-Lto`, `-LowMemory`, and `-ShowBackendCommands` pass through to
   Nuitka.
 - `-ResetRuntimeDefaults` explicitly deletes existing `%LOCALAPPDATA%/open-pdf`
