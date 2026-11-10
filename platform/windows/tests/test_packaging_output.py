@@ -33,6 +33,7 @@ function Out-Host {
 }
 $configuration = [pscustomobject]@{
     Python = $Python; Output = $OutputDirectory; Variant = 'probe'
+    Report = Join-Path $OutputDirectory 'probe-report.xml'
 }
 $code = 'import sys; print("ordinary output", flush=True); print("ordinary diagnostic", file=sys.stderr, flush=True); sys.exit(int(sys.argv[1]))'
 Invoke-Nuitka $configuration @('-c', $code, "$NativeExit") $OutputDirectory

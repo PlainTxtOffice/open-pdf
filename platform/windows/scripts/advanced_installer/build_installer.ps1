@@ -41,6 +41,11 @@ print(json.dumps(dict(slug=project["name"], version=project["version"],
         $metadata.title.IndexOfAny([IO.Path]::GetInvalidFileNameChars()) -ge 0) {
         throw 'Invalid project name, packaging title, or company-name.'
     }
+    $publisherSlug = ($metadata.company.ToLowerInvariant() -replace '[^a-z0-9]+', '-').Trim('-')
+    if ($publisherSlug -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
+        throw 'The publisher must produce a nonempty lowercase installation slug.'
+    }
+    $metadata | Add-Member -NotePropertyName PublisherSlug -NotePropertyValue $publisherSlug
     return $metadata
 }
 
@@ -132,15 +137,21 @@ function Assert-InstallerProject {
         throw 'AIP output must be ExeInside.'
     }
     $prefix = if ($Architecture -eq 'x64') { '[ProgramFiles64Folder]' } else { '[ProgramFilesFolder]' }
-    foreach ($entry in @(@('SET_APPDIR', ($prefix + '[Manufacturer]\[ProductName]')),
-                         @('SET_SHORTCUTDIR', '[ProgramMenuFolder][ProductName]'))) {
-        $action = $xml.SelectSingleNode("//ROW[@Action='$($entry[0])' and @Target]")
-        if ($null -eq $action) { throw "Missing AIP action $($entry[0])." }
+    # Keep the established display-name paths on upgrades. Only new AIPs use slugs.
+    $folders = @{
+        SET_APPDIR = @(($prefix + '[Manufacturer]\[ProductName]'),
+            ($prefix + $Metadata.PublisherSlug + '\' + $Metadata.slug))
+        SET_SHORTCUTDIR = @('[ProgramMenuFolder][ProductName]',
+            ('[ProgramMenuFolder]' + $Metadata.slug))
+    }
+    foreach ($actionName in $folders.Keys) {
+        $action = $xml.SelectSingleNode("//ROW[@Action='$actionName' and @Target]")
+        if ($null -eq $action) { throw "Missing AIP action $actionName." }
         $target = $action.GetAttribute('Target')
         foreach ($value in $action.GetAttribute('MultiBuildTarget').Split(';')) {
             if ($value.StartsWith('DefaultBuild:')) { $target = $value.Substring(13) }
         }
-        if ($target -ne $entry[1]) { throw "Unexpected AIP folder: $target" }
+        if ($target -notin $folders[$actionName]) { throw "Unexpected AIP folder: $target" }
     }
     $syncs = @(Get-AipRows $xml 'SynchronizedFolderComponent')
     if ($syncs.Count -ne 1 -or $syncs[0].Directory_ -ne 'APPDIR') { throw 'Expected one APPDIR synchronization mapping.' }
@@ -161,7 +172,7 @@ function Assert-InstallerProject {
     }
     $upgrades = @(Get-AipRows $xml 'MsiUpgradeComponent' | Where-Object { $_.ActionProperty -eq 'OLDPRODUCTS' })
     if ($upgrades.Count -ne 1 -or $upgrades[0].UpgradeCode -ne '[|UpgradeCode]') { throw 'Missing major-upgrade detection.' }
-    $file = @(Get-AipRows $xml 'MsiFilesComponent' | Where-Object { $_.FileName.Split('|')[-1] -eq "$($Metadata.title).exe" })
+    $file = @(Get-AipRows $xml 'MsiFilesComponent' | Where-Object { $_.FileName.Split('|')[-1] -eq "$($Metadata.slug).exe" })
     if ($file.Count -ne 1) { throw 'AIP must contain exactly one application executable.' }
     $component = $xml.SelectSingleNode("//ROW[@Component='$($file[0].Component_)' and @Directory_]")
     if ($null -eq $component -or $component.Directory_ -ne 'APPDIR') { throw 'Executable must be directly in APPDIR.' }
@@ -217,6 +228,13 @@ function Invoke-InstallerCli {
     }
 }
 
+function Set-InstallerIcons {
+    param([string]$Path, [string]$Icon)
+    # Refresh both references on every build so source icon changes reach setup.
+    Invoke-InstallerCli @('/edit', $Path, '/SetOutputExeIcon', '-buildname', 'DefaultBuild', '-iconpath', $Icon)
+    Invoke-InstallerCli @('/edit', $Path, '/SetIcon', '-icon', $Icon)
+}
+
 $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot, $PSScriptRoot)
 $SourceDirectory = [IO.Path]::GetFullPath($SourceDirectory, $ProjectRoot).TrimEnd('\')
 $PackagingDirectory = [IO.Path]::GetFullPath($PackagingDirectory, $ProjectRoot)
@@ -229,7 +247,11 @@ if ([IO.Path]::GetFileName($AdvancedInstaller) -ne 'AdvancedInstaller.com' -or
     throw "Advanced Installer CLI not found: $AdvancedInstaller"
 }
 $metadata = Read-InstallerMetadata $ProjectRoot
-$executableName = "$($metadata.title).exe"
+$icon = Join-Path $ProjectRoot 'assets/open_pdf.ico'
+if (-not (Test-Path -LiteralPath $icon -PathType Leaf)) {
+    throw "Missing installer icon: $icon. Generate it from the shared SVG before building."
+}
+$executableName = "$($metadata.slug).exe"
 $executable = Join-Path $SourceDirectory $executableName
 $architecture = Get-PayloadArchitecture $executable
 Assert-PayloadVersion $executable $metadata.version
@@ -258,22 +280,24 @@ if (-not (Test-Path -LiteralPath $projectFile)) {
         @('/SetProperty', "Manufacturer=$($metadata.company)"),
         @('/SetProperty', 'ALLUSERS=1'),
         @('/SetPackageType', $architecture, '-buildname', $buildName),
-        @('/SetAppdir', '-buildname', $buildName, '-path', ($programFiles + '[Manufacturer]\[ProductName]')),
-        @('/SetShortcutdir', '-buildname', $buildName, '-path', '[ProgramMenuFolder][ProductName]'),
+        @('/SetAppdir', '-buildname', $buildName, '-path', ($programFiles + $metadata.PublisherSlug + '\' + $metadata.slug)),
+        @('/SetShortcutdir', '-buildname', $buildName, '-path', ('[ProgramMenuFolder]' + $metadata.slug)),
         @('/NewSync', 'APPDIR', $SourceDirectory, '-existingfiles', 'keep'),
         @('/RefreshSync', 'APPDIR'),
         @('/NewShortcut', '-name', $metadata.title, '-dir', 'SHORTCUTDIR', '-target', "APPDIR\$executableName", '-wkdir', 'APPDIR'),
         @('/SetOutputType', 'ExeInside', '-buildname', $buildName)
     )
     foreach ($command in $commands) { Invoke-InstallerCli (@('/edit', $initialProject) + $command) }
+    Set-InstallerIcons $initialProject $icon
     Assert-InstallerProject $initialProject $metadata $architecture $SourceDirectory
     [IO.File]::Move($initialProject, $projectFile)
 }
 Assert-InstallerProject $projectFile $metadata $architecture $SourceDirectory
+Set-InstallerIcons $projectFile $icon
 Invoke-InstallerCli @('/edit', $projectFile, '/RefreshSync', 'APPDIR')
 [xml]$project = Get-Content -LiteralPath $projectFile -Raw
 Assert-AipFiles $project $projectFile $SourceDirectory -Complete
-$packageName = "$($metadata.slug)-$($metadata.version)-$architecture-setup.exe"
+$packageName = "$($metadata.slug)-$($metadata.version)-setup.exe"
 Invoke-InstallerCli @('/edit', $projectFile, '/SetVersion', $metadata.version)
 Invoke-InstallerCli @('/edit', $projectFile, '/SetPackageName', $packageName, '-buildname', $buildName)
 Invoke-InstallerCli @('/edit', $projectFile, '/SetOutputLocation', '-buildname', $buildName, '-path', $OutputDirectory)

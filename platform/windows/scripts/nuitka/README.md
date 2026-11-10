@@ -1,10 +1,16 @@
 # Nuitka Builds
 
-| Script | Executable | Output | Distribution |
-| --- | --- | --- | --- |
-| `onefile.ps1` | `Open PDF.exe` | `build/onefile/` | Portable download |
-| `standalone.ps1` | `Open PDF.exe` | `build/standalone/main.dist/` | Installer payload |
-| `standalone-debug.ps1` | `Open PDF.exe` | `build/standalone-debug/main.dist/` | Local troubleshooting |
+| Interface | Format | Script | Entrypoint and output | Download filename | Release status |
+| --- | --- | --- | --- | --- | --- |
+| GUI | Portable | `onefile.ps1` | `open_pdf/main.py` → `build/onefile/open-pdf-1.0.1-portable.exe` | `open-pdf-1.0.1-portable.exe` | Build target; validate before publishing |
+| GUI | Standalone | `standalone.ps1` | `open_pdf/main.py` → `build/standalone/main.dist/open-pdf.exe` | None; installer input | Build target |
+| GUI | Installer | `../advanced_installer/build_installer.ps1` | Release `main.dist` → `build/installer/open-pdf-1.0.1-setup.exe` | `open-pdf-1.0.1-setup.exe` | Build target; installation testing required |
+| GUI | Debug | `standalone-debug.ps1` | `open_pdf/main.py` → `build/standalone-debug/main.dist/open-pdf.exe` | None | Local troubleshooting only |
+
+Open PDF ships one desktop interface; there is no separate CLI download.
+Download names follow the version in `pyproject.toml`. Standalone executables
+use `open-pdf.exe` for installation and shortcuts; the display title stays Open
+PDF.
 
 Use PowerShell 7.3 or newer. Run from `platform/windows/`; scripts also resolve
 their inputs correctly from other working directories. The build interpreter
@@ -22,8 +28,9 @@ in that interpreter.
 
 The title, company, and copyright come from `[tool.open-pdf.packaging]` in
 `pyproject.toml`. The application version and description come from `[project]`.
-The title remains Open PDF. Each variant writes `compilation-report.xml` and
-`nuitka-<variant>-build.log` in its output directory.
+The title remains Open PDF. Each variant writes
+`build/nuitka-<variant>-report.xml` and retains `nuitka-<variant>-build.log`
+in its selected output directory, including both stdout and stderr.
 
 ## Options and storage
 
@@ -80,22 +87,24 @@ see the repository README's license section.
 
 The build scripts contain their own metadata reading and bounded privacy scan;
 no helper module is required. After compilation, they scan the unpacked
-`main.dist` executables and text files for the developer username, repository
-and project paths, and author emails in UTF-8 and UTF-16LE. Each hit produces a
-warning. Only the icon, optional fonts, and onefile marker are bundled
-explicitly; screenshots, user settings, tests, logs, and credentials are
-excluded.
+`main.dist` executables (including onefile's `main.dll`) and text files for the
+developer username, repository and project paths, and author emails in UTF-8 and
+UTF-16LE. Each hit produces a warning. Only the icon, optional fonts, and
+onefile marker are bundled explicitly; screenshots, user settings, tests, logs,
+and credentials are excluded.
 
 Both standalone variants then run `validate_release.ps1`. This report-only
 command fails for runtime data, portable markers, `.env` or `.key` files,
-application test folders, a missing payload, or a payload without an executable.
-Dependency-owned data and test folders are allowed. The command never deletes
-or changes the payload.
+application test folders, a missing payload, or a missing or empty expected
+executable. `-ExecutableName` overrides the validator's `open-pdf.exe` default
+when building under another name; the standalone script passes its selected name
+automatically. Dependency-owned data and test folders are allowed. The command
+never deletes or changes the payload.
 
 ## Distribution and installer
 
-- Ship the portable `build/onefile/Open PDF.exe` alone, without its generated
-  `open-pdf-data` folder.
+- Ship the portable `build/onefile/open-pdf-<version>-portable.exe` alone,
+  without its generated `open-pdf-data` folder.
 - Package the complete release `build/standalone/main.dist` folder for an
   installer. Keep the debug output for troubleshooting.
 - Keep build intermediates for reuse, but never distribute them, compilation
@@ -119,3 +128,7 @@ The Windows build workflow runs CI before building free-Nuitka standalone and
 onefile artifacts. It runs manually or on version tags once published. Use those
 unsigned artifacts to check builds; produce Commercial distributions locally.
 Publishing uses the repository's `github-repo-upload` selection.
+
+New downloads use the versioned names above. Before publishing them, update the
+release's asset links, notes, and SHA-256 checksums together. Existing published
+download aliases are historical assets and are not renamed by these scripts.

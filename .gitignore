@@ -59,3 +59,4 @@ platform/windows/dev-docs/packaging/advanced_installer/*
 !platform/windows/dev-docs/packaging/advanced_installer/*.aip
 !platform/windows/dev-docs/packaging/advanced_installer/*.md
 platform/windows/dev-docs/packaging/advanced_installer/*.back(*).aip
+assets/icons/candidates

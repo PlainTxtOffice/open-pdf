@@ -13,9 +13,14 @@ The build needs licensed Advanced Installer Professional, the project
 Nuitka payload. Follow the [Nuitka README](../nuitka/README.md) for compilation,
 Commercial features, privacy checks, and application signing. Recompile after
 changing application code or version; the installer script does not compile it.
+The standalone payload must contain `open-pdf.exe`. The persistent AIP's file
+and shortcut references have been updated to this filename while retaining the
+UpgradeCode and existing installation directories. Rebuild the payload before
+running the installer script; old `Open PDF.exe` payloads are rejected.
 
-The current x64 output is `build/installer/open-pdf-1.0.0-x64-setup.exe`.
-The filename follows the project version and executable architecture. The script
+The current x64 output is `build/installer/open-pdf-1.0.1-setup.exe`. The
+filename follows the project version; architecture is validated from the payload
+rather than added to the name for this single-architecture download. The script
 prints the exact installer and AIP paths and reports the Authenticode status
 after verifying a fresh, nonempty artifact.
 
@@ -73,6 +78,17 @@ shortcuts. Major upgrades remove the old product before installing the new
 product. Increment the version for every distributed update. Do not regenerate
 the AIP or use this synchronization workflow for patches or overlapping
 upgrades.
+
+The existing display-name installation and Start menu paths are preserved.
+Only newly initialized test or first-release projects use
+`[ProgramFiles64Folder]plain-txt-office\open-pdf` and
+`[ProgramMenuFolder]open-pdf` (with the 32-bit Program Files prefix for x86).
+Creating an isolated test project never replaces the persistent release AIP.
+
+Setup and Installed Apps both use `assets/open_pdf.ico`, the same source as
+Nuitka. Both references are refreshed through Advanced Installer's supported
+commands after validating the existing project. This requires Advanced Installer
+23.4 or newer; the locally configured version is 24.1.
 
 The script rejects architecture and identity mismatches, duplicate payload
 entries, missing standalone dependencies, invalid MSI versions, and executable

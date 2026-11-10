@@ -42,14 +42,18 @@ function Get-BuildConfiguration {
     }
     $version = $metadata.project.version
     $description = ($metadata.project.description -split '\s+') -join ' '
-    if ($version -notmatch '^\d+(\.\d+){1,3}$') {
+    if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$' -or
+        @($version.Split('.') | Where-Object { [decimal]$_ -gt 65535 }).Count) {
         throw "Project version '$version' is not valid Windows version metadata."
+    }
+    if ($metadata.project.name -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
+        throw 'Project name must be a lowercase hyphenated slug for executable filenames.'
     }
     # The version resource ships to users, so template placeholders must not.
     foreach ($value in @($version, $description, $product.title, $product.'company-name', $product.copyright)) {
         if ($value -match 'replace-me') { throw "Project metadata '$value' is still a placeholder." }
     }
-    if (-not $OutputFilename) { $OutputFilename = "$($product.title).exe" }
+    if (-not $OutputFilename) { $OutputFilename = "$($metadata.project.name).exe" }
     if ([IO.Path]::GetFileName($OutputFilename) -ne $OutputFilename -or
         [IO.Path]::GetExtension($OutputFilename) -ne '.exe') {
         throw 'OutputFilename must be a filename ending in .exe, without directories.'
@@ -64,6 +68,7 @@ function Get-BuildConfiguration {
     [PSCustomObject]@{
         Python = $pythonPath; Output = Resolve-ProjectPath $ProjectRoot $OutputDirectory
         Filename = $OutputFilename; Variant = $Variant
+        Report = Join-Path $ProjectRoot "build/nuitka-$Variant-report.xml"
         Title = $product.title; Version = $version; Description = $description
         Company = $product.'company-name'; Copyright = $product.copyright
         AppDataName = $metadata.tool.'open-pdf'.'app-data-dir'; Icon = $icon; Fonts = $fonts
@@ -108,7 +113,7 @@ function Get-NuitkaArguments {
         '-m', 'nuitka', '--enable-plugin=pyside6', "--windows-console-mode=$ConsoleMode",
         '--assume-yes-for-downloads', "--jobs=$Jobs", "--lto=$Lto",
         "--output-filename=$($Configuration.Filename)", "--output-dir=$($Configuration.Output)",
-        "--report=$(Join-Path $Configuration.Output 'compilation-report.xml')",
+        "--report=$($Configuration.Report)",
         "--windows-icon-from-ico=$($Configuration.Icon)",
         "--product-name=$($Configuration.Title)", "--file-version=$($Configuration.Version)",
         "--product-version=$($Configuration.Version)", "--file-description=$($Configuration.Description)",
@@ -188,6 +193,7 @@ function Stop-RunningOutput {
 function Invoke-Nuitka {
     param($Configuration, [string[]]$NuitkaArguments, [string]$ProjectRoot)
     $null = New-Item -ItemType Directory -Path $Configuration.Output -Force
+    [IO.Directory]::CreateDirectory((Split-Path $Configuration.Report)) | Out-Null
     $logPath = Join-Path $Configuration.Output "nuitka-$($Configuration.Variant)-build.log"
     Write-Host "Output directory: $($Configuration.Output) (build log: $logPath)"
     Push-Location $ProjectRoot
@@ -197,7 +203,8 @@ function Invoke-Nuitka {
         & $pythonPath @NuitkaArguments 2>&1 |
             ForEach-Object { $_.ToString() } |
             Tee-Object -FilePath $logPath | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw "Nuitka failed with exit code $LASTEXITCODE. See $logPath." }
+        $nuitkaExitCode = $LASTEXITCODE
+        if ($nuitkaExitCode -ne 0) { throw "Nuitka failed with exit code $nuitkaExitCode. See $logPath." }
     } finally { Pop-Location }
 }
 
@@ -295,5 +302,5 @@ Invoke-Nuitka $config $nuitkaArguments $projectRoot
 $distPath = Join-Path $config.Output 'main.dist'
 Invoke-PrivacyScan $config $projectRoot $distPath
 $validateScript = Join-Path $PSScriptRoot 'validate_release.ps1'
-& $validateScript -DistPath $distPath -PythonExecutable $config.Python
+& $validateScript -DistPath $distPath -PythonExecutable $config.Python -ExecutableName $config.Filename
 if ($LASTEXITCODE -ne 0) { throw "Release validation failed for $distPath." }

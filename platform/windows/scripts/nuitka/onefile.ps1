@@ -42,14 +42,18 @@ function Get-BuildConfiguration {
     }
     $version = $metadata.project.version
     $description = ($metadata.project.description -split '\s+') -join ' '
-    if ($version -notmatch '^\d+(\.\d+){1,3}$') {
+    if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$' -or
+        @($version.Split('.') | Where-Object { [decimal]$_ -gt 65535 }).Count) {
         throw "Project version '$version' is not valid Windows version metadata."
+    }
+    if ($metadata.project.name -notmatch '^[a-z0-9]+(?:-[a-z0-9]+)*$') {
+        throw 'Project name must be a lowercase hyphenated slug for download filenames.'
     }
     # The version resource ships to users, so template placeholders must not.
     foreach ($value in @($version, $description, $product.title, $product.'company-name', $product.copyright)) {
         if ($value -match 'replace-me') { throw "Project metadata '$value' is still a placeholder." }
     }
-    if (-not $OutputFilename) { $OutputFilename = "$($product.title).exe" }
+    if (-not $OutputFilename) { $OutputFilename = "$($metadata.project.name)-$version-portable.exe" }
     if ([IO.Path]::GetFileName($OutputFilename) -ne $OutputFilename -or
         [IO.Path]::GetExtension($OutputFilename) -ne '.exe') {
         throw 'OutputFilename must be a filename ending in .exe, without directories.'
@@ -64,6 +68,7 @@ function Get-BuildConfiguration {
     [PSCustomObject]@{
         Python = $pythonPath; Output = Resolve-ProjectPath $ProjectRoot $OutputDirectory
         Filename = $OutputFilename; Variant = $Variant
+        Report = Join-Path $ProjectRoot "build/nuitka-$Variant-report.xml"
         Title = $product.title; Version = $version; Description = $description
         Company = $product.'company-name'; Copyright = $product.copyright
         AppDataName = $metadata.tool.'open-pdf'.'app-data-dir'; Icon = $icon; Fonts = $fonts
@@ -108,7 +113,7 @@ function Get-NuitkaArguments {
         '-m', 'nuitka', '--enable-plugin=pyside6', "--windows-console-mode=$ConsoleMode",
         '--assume-yes-for-downloads', "--jobs=$Jobs", "--lto=$Lto",
         "--output-filename=$($Configuration.Filename)", "--output-dir=$($Configuration.Output)",
-        "--report=$(Join-Path $Configuration.Output 'compilation-report.xml')",
+        "--report=$($Configuration.Report)",
         "--windows-icon-from-ico=$($Configuration.Icon)",
         "--product-name=$($Configuration.Title)", "--file-version=$($Configuration.Version)",
         "--product-version=$($Configuration.Version)", "--file-description=$($Configuration.Description)",
@@ -188,6 +193,7 @@ function Stop-RunningOutput {
 function Invoke-Nuitka {
     param($Configuration, [string[]]$NuitkaArguments, [string]$ProjectRoot)
     $null = New-Item -ItemType Directory -Path $Configuration.Output -Force
+    [IO.Directory]::CreateDirectory((Split-Path $Configuration.Report)) | Out-Null
     $logPath = Join-Path $Configuration.Output "nuitka-$($Configuration.Variant)-build.log"
     Write-Host "Output directory: $($Configuration.Output) (build log: $logPath)"
     Push-Location $ProjectRoot
@@ -197,7 +203,8 @@ function Invoke-Nuitka {
         & $pythonPath @NuitkaArguments 2>&1 |
             ForEach-Object { $_.ToString() } |
             Tee-Object -FilePath $logPath | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw "Nuitka failed with exit code $LASTEXITCODE. See $logPath." }
+        $nuitkaExitCode = $LASTEXITCODE
+        if ($nuitkaExitCode -ne 0) { throw "Nuitka failed with exit code $nuitkaExitCode. See $logPath." }
     } finally { Pop-Location }
 }
 
@@ -238,7 +245,10 @@ def scan(dist: Path, project: Path, repository: Path) -> list[dict[str, str]]:
     overlap = max(len(pattern) for _, pattern in patterns) - 1
     hits: list[dict[str, str]] = []
     for path in dist.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in SCANNED_SUFFIXES:
+        if not path.is_file() or (
+            path.suffix.lower() not in SCANNED_SUFFIXES
+            and path.name.lower() != "main.dll"
+        ):
             continue
         found: set[str] = set()
         with path.open("rb") as stream:
@@ -309,6 +319,15 @@ $nuitkaArguments += @(
     'open_pdf/main.py'
 )
 Invoke-Nuitka $config $nuitkaArguments $projectRoot
+$artifact = Join-Path $config.Output $config.Filename
+if (-not (Test-Path -LiteralPath $artifact -PathType Leaf) -or
+    (Get-Item -LiteralPath $artifact).Length -eq 0) {
+    throw "Nuitka did not produce the portable executable: $artifact"
+}
 # The onefile payload is compressed; scan the folder it was packed from.
 $distPath = Join-Path $config.Output 'main.dist'
+if (-not (Test-Path -LiteralPath (Join-Path $distPath 'main.dll')) -and
+    -not (Test-Path -LiteralPath (Join-Path $distPath $config.Filename))) {
+    throw "Missing onefile staging executable or main.dll in $distPath."
+}
 Invoke-PrivacyScan $config $projectRoot $distPath

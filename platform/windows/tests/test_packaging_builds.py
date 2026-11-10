@@ -1,5 +1,7 @@
 """Check build variants, preflights, and privacy at the compiler boundary."""
 
+import tomllib
+
 import pytest
 
 from packaging_support import POWERSHELL, arguments, make_project, run_script
@@ -22,7 +24,9 @@ def test_build_variant_flags(tmp_path, variant, commercial):
     assert [a for a in args if a.startswith("--windows-console-mode=")] == [
         "--windows-console-mode=" + ("force" if debug else "disable")]
     assert any("portable.marker=" in a for a in args) == portable
-    assert "--output-filename=Open PDF.exe" in args
+    version = tomllib.loads((project / "pyproject.toml").read_text("utf-8"))["project"]["version"]
+    filename = f"open-pdf-{version}-portable.exe" if portable else "open-pdf.exe"
+    assert f"--output-filename={filename}" in args
     assert "--output-dir=" + str(project / "build" / variant) in args
     assert ("--enable-plugin=data-hiding" in args) == bool(commercial)
     assert ("--enable-plugin=anti-debugger" in args) == bool(commercial and not debug)

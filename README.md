@@ -1,8 +1,8 @@
-<!-- last_updated: 2026-11-09 -->
+<!-- last_updated: 2026-11-10 -->
 <!-- Authoring guidance: dev-docs/specs/README_SPEC.instructions.md -->
 <!-- rumdl-disable MD033 MD041 -->
 <p align="center">
-  <img src="assets/icons/open_pdf.svg" alt="Open PDF logo: a white document with a red PDF badge and a blue arrow" width="96">
+  <img src="assets/icons/open_pdf.svg" alt="Open PDF logo: a white printer on a red tile, printing a page with a peeled corner" width="96">
 </p>
 
 <h1 align="center">Open PDF</h1>
@@ -70,8 +70,8 @@ pending.
 
 | Platform | Download | Notes |
 | --- | --- | --- |
-| Windows (portable) | [open-pdf.exe](https://github.com/PlainTxtOffice/open-pdf/releases/latest/download/open-pdf.exe) | Runs without installation. |
-| Windows (installer) | [open-pdf-setup.exe](https://github.com/PlainTxtOffice/open-pdf/releases/latest/download/open-pdf-setup.exe) | |
+| Windows (portable) | [open-pdf-1.0.1-portable.exe](https://github.com/PlainTxtOffice/open-pdf/releases/download/v1.0.1/open-pdf-1.0.1-portable.exe) | Runs without installation. |
+| Windows (installer) | [open-pdf-1.0.1-setup.exe](https://github.com/PlainTxtOffice/open-pdf/releases/download/v1.0.1/open-pdf-1.0.1-setup.exe) | |
 
 The Windows builds are for x64 (64-bit). Checksums and release notes are on the
 [latest release](https://github.com/PlainTxtOffice/open-pdf/releases/latest).

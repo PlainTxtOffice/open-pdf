@@ -12,7 +12,7 @@ pytestmark = pytest.mark.skipif(not POWERSHELL, reason="PowerShell 7 is required
 def clean_dist(project):
     dist = project / "build" / "standalone" / "main.dist"
     dist.mkdir(parents=True)
-    (dist / "Open PDF.exe").write_bytes(b"MZ")
+    (dist / "open-pdf.exe").write_bytes(b"MZ")
     return dist
 
 
@@ -54,10 +54,20 @@ def test_validation_allows_dependency_data_and_tests(tmp_path):
 def test_validation_requires_an_executable(tmp_path):
     project, _ = make_project(tmp_path)
     dist = clean_dist(project)
-    (dist / "Open PDF.exe").unlink()
+    (dist / "open-pdf.exe").unlink()
     result = run_script(project, sys.executable, "validate_release.ps1")
     assert result.returncode == 1
-    assert "Distribution contains no executable" in result.stdout
+    assert "Missing or empty release executable: open-pdf.exe" in result.stdout
+
+
+def test_validation_rejects_old_executable(tmp_path):
+    project, _ = make_project(tmp_path)
+    dist = clean_dist(project)
+    (dist / "Open PDF.exe").write_bytes(b"MZ")
+    result = run_script(project, sys.executable, "validate_release.ps1")
+    assert result.returncode == 1
+    assert "Stale Open PDF.exe remains" in result.stdout
+    assert (dist / "Open PDF.exe").exists()
 
 
 def test_validation_reports_missing_distribution(tmp_path):

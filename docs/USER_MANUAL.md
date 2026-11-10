@@ -1,8 +1,8 @@
 ---
-last_updated: 2026-11-09
-version: 0.4.0
+last_updated: 2026-11-10
+version: 0.4.2
 product_versions:
-  windows: "1.0.0"
+  windows: "1.0.1"
   linux: "0.1.0"
   mac_os: "0.1.0"
 ---
@@ -95,9 +95,9 @@ its settings, logs, and caches.
 
 | Script | Output | Storage location |
 | --- | --- | --- |
-| `onefile.ps1` | `platform/windows/build/onefile/Open PDF.exe`, one self-contained file | Portable: an `open-pdf-data` folder beside the executable |
-| `standalone.ps1` | `platform/windows/build/standalone/main.dist/`, an unpacked directory to feed an installer | Per-user: `%LOCALAPPDATA%\open-pdf` |
-| `standalone.ps1 -Console` | `platform/windows/build/standalone-console/main.dist/`, the same build with a console window for troubleshooting | Per-user: `%LOCALAPPDATA%\open-pdf` |
+| `onefile.ps1` | `platform/windows/build/onefile/open-pdf-<version>-portable.exe`, one self-contained file | Portable: an `open-pdf-data` folder beside the executable |
+| `standalone.ps1` | `platform/windows/build/standalone/main.dist/open-pdf.exe`, with dependencies for the installer | Per-user: `%LOCALAPPDATA%\open-pdf` |
+| `standalone-debug.ps1` | `platform/windows/build/standalone-debug/main.dist/open-pdf.exe`, with a console for troubleshooting | Per-user: `%LOCALAPPDATA%\open-pdf` |
 
 1. From `platform/windows/`, run `./scripts/nuitka/onefile.ps1` for the
    portable build, or `./scripts/nuitka/standalone.ps1` for the directory an
