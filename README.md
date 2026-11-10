@@ -1,11 +1,8 @@
----
-last_updated: 2026-11-09
----
-
+<!-- last_updated: 2026-11-09 -->
 <!-- Authoring guidance: dev-docs/specs/README_SPEC.instructions.md -->
 <!-- rumdl-disable MD033 MD041 -->
 <p align="center">
-  <img src="assets/icons/open_pdf.svg" alt="Open PDF logo: a white document with a red PDF badge and a blue arrow" width="200">
+  <img src="assets/icons/open_pdf.svg" alt="Open PDF logo: a white document with a red PDF badge and a blue arrow" width="96">
 </p>
 
 <h1 align="center">Open PDF</h1>
@@ -13,6 +10,18 @@ last_updated: 2026-11-09
 <p align="center">
   A lightweight desktop PDF viewer with light editing, for people who want to
   read, search, and touch up PDFs without a heavyweight suite.
+</p>
+
+<p align="center">
+  <a href="https://github.com/PlainTxtOffice/open-pdf/releases/latest"><img src="https://img.shields.io/github/v/release/PlainTxtOffice/open-pdf?label=release" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-informational" alt="License: MIT"></a>
+  <a href="#download"><img src="https://img.shields.io/badge/platforms-Windows%20%7C%20Linux-informational" alt="Platforms: Windows and Linux"></a>
+</p>
+
+<p align="center">
+  <a href="#download">Download</a> ·
+  <a href="docs/USER_MANUAL.md">User manual</a> ·
+  <a href="https://plaintxtoffice.com/apps/open-pdf/">Website</a>
 </p>
 <!-- rumdl-enable MD033 MD041 -->
 
@@ -56,6 +65,16 @@ pending.
 ## App Screenshot
 
 ![Open PDF main window on Windows, with page thumbnails on the left, the continuous document view in the center, and bookmarks on the right](platform/windows/assets/screenshots/open-pdf-main-window.png)
+
+## Download
+
+| Platform | Download | Notes |
+| --- | --- | --- |
+| Windows (portable) | [open-pdf.exe](https://github.com/PlainTxtOffice/open-pdf/releases/latest/download/open-pdf.exe) | Runs without installation. |
+| Windows (installer) | [open-pdf-setup.exe](https://github.com/PlainTxtOffice/open-pdf/releases/latest/download/open-pdf-setup.exe) | |
+
+The Windows builds are for x64 (64-bit). Checksums and release notes are on the
+[latest release](https://github.com/PlainTxtOffice/open-pdf/releases/latest).
 
 ## User Manual
 
