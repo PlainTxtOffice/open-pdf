@@ -70,8 +70,8 @@ pending.
 
 | Platform | Download | Notes |
 | --- | --- | --- |
-| Windows (portable) | [Latest release](https://github.com/PlainTxtOffice/open-pdf/releases/latest) | Choose the portable executable. Runs without installation. |
-| Windows (installer) | [Latest release](https://github.com/PlainTxtOffice/open-pdf/releases/latest) | Choose the setup executable. |
+| Windows (portable) | [open-pdf.exe](https://github.com/PlainTxtOffice/open-pdf/releases/latest/download/open-pdf.exe) | Runs without installation. |
+| Windows (installer) | [open-pdf-setup.exe](https://github.com/PlainTxtOffice/open-pdf/releases/latest/download/open-pdf-setup.exe) | |
 
 The Windows builds are for x64 (64-bit). Checksums and release notes are on the
 [latest release](https://github.com/PlainTxtOffice/open-pdf/releases/latest).
