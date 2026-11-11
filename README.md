@@ -21,7 +21,7 @@
 <p align="center">
   <a href="#download">Download</a> ·
   <a href="docs/USER_MANUAL.md">User manual</a> ·
-  <a href="https://plaintxtoffice.com/apps/open-pdf/">Website</a>
+  <a href="https://plaintxtoffice.com/apps/">Website</a>
 </p>
 <!-- rumdl-enable MD033 MD041 -->
 
